@@ -1,8 +1,8 @@
-name: BMS Ticket Checker
+name: BMS Checker
 
 on:
   schedule:
-    - cron: "*/10 * * * *"   # every 10 minutes
+    - cron: "*/10 * * * *"
   workflow_dispatch:
 
 jobs:
@@ -10,20 +10,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      - name: Install Chrome
-        uses: browser-actions/setup-chrome@v1
-
       - name: Install dependencies
         run: |
-          pip install selenium webdriver-manager requests
+          pip install selenium requests
 
       - name: Run script
         run: python bms.py
