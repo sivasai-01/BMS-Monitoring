@@ -1,8 +1,8 @@
 import time
 import requests
 from selenium import webdriver
-# from selenium.webdriver.chrome.service import Service
-# from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
 
 BMS_URL = "https://in.bookmyshow.com/movies/hyderabad/project-hail-mary/buytickets/ET00492371/20260408"
 NTFY_URL = "https://ntfy.sh/mytopic"
@@ -13,23 +13,17 @@ TARGET_COLOR = "rgb(51, 51, 51)"   # Black → tickets released
 def send_notification():
     requests.post(
         NTFY_URL,
-        data="🎟 Tickets Released for THU 08 APR! Hurry up fast 😀".encode("utf-8")
+        data="🎟 Tickets Released for THU 09 APR! Hurry up fast 😀".encode("utf-8")
     )
 
 def check_ticket():
     options = webdriver.ChromeOptions()
-
-    # ✅ REQUIRED for GitHub Actions
-    options.add_argument("--headless=new")
-    options.add_argument("--no-sandbox")
-    options.add_argument("--disable-dev-shm-usage")
-    options.add_argument("--disable-gpu")
+    # options.add_argument("--headless=new")
     options.add_argument("--window-size=1920,1080")
-    
-    # optional but helps
-    options.add_argument("--disable-blink-features=AutomationControlled")
+    options.add_argument("--disable-gpu")
 
-    driver = webdriver.Chrome(options=options)
+    service = Service(ChromeDriverManager().install())
+    driver = webdriver.Chrome(service=service, options=options)
 
     try:
         print("Opening page...")
@@ -60,15 +54,15 @@ def check_ticket():
             # """)
 
             result = driver.execute_script("""
-                const parent = document.querySelector('div[id="20260408"]');
+                const parent = document.querySelector('div[id="20260409"]');
 
                 if (!parent) return "NO_TARGET";
 
                 // get ONLY visible direct children
                 const children = Array.from(parent.children);
 
-                // find exact "08" element
-                const el = children.find(c => c.innerText.trim() === '08');
+                // find exact "09" element
+                const el = children.find(c => c.innerText.trim() === '09');
 
                 if (!el) return "NO_TEXT";
 
