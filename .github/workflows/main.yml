@@ -1,8 +1,8 @@
-name: BMS Checker
+name: BMS Ticket Checker
 
 on:
   schedule:
-    - cron: "*/10 * * * *"
+    - cron: "*/10 * * * *"   # every 10 minutes
   workflow_dispatch:
 
 jobs:
@@ -10,15 +10,39 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      # ✅ Checkout repo
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+      # ✅ Setup Python
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      - name: Install dependencies
+      # ✅ Install system dependencies (VERY IMPORTANT)
+      - name: Install Chrome dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            wget \
+            unzip \
+            xvfb \
+            libxi6 \
+            libgconf-2-4 \
+            libnss3 \
+            libxss1 \
+            libasound2 \
+            libatk-bridge2.0-0 \
+            libgtk-3-0 \
+            libgbm-dev
+
+      # ✅ Install Python dependencies
+      - name: Install Python packages
         run: |
           pip install selenium requests
 
-      - name: Run script
-        run: python bms.py
+      # ✅ Run script using virtual display
+      - name: Run Selenium script
+        run: |
+          xvfb-run --auto-servernum python bms.py
