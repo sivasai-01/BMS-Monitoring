@@ -24,4 +24,4 @@ jobs:
           playwright install --with-deps chromium
 
       - name: Run script
-        run: python bms_playwright.py
+        run: python bms.py
