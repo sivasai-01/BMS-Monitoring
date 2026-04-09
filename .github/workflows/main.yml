@@ -1,8 +1,8 @@
-name: BMS Ticket Checker
+name: BMS Ticket Checker (Playwright)
 
 on:
   schedule:
-    - cron: "*/10 * * * *"   # every 10 minutes
+    - cron: "*/10 * * * *"
   workflow_dispatch:
 
 jobs:
@@ -10,39 +10,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # ✅ Checkout repo
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      # ✅ Setup Python
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      # ✅ Install system dependencies (VERY IMPORTANT)
-      - name: Install Chrome dependencies
+      - name: Install dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            wget \
-            unzip \
-            xvfb \
-            libxi6 \
-            libgconf-2-4 \
-            libnss3 \
-            libxss1 \
-            libasound2 \
-            libatk-bridge2.0-0 \
-            libgtk-3-0 \
-            libgbm-dev
+          pip install -r requirements.txt
+          playwright install --with-deps chromium
 
-      # ✅ Install Python dependencies
-      - name: Install Python packages
-        run: |
-          pip install selenium requests
-
-      # ✅ Run script using virtual display
-      - name: Run Selenium script
-        run: |
-          xvfb-run --auto-servernum python bms.py
+      - name: Run script
+        run: python bms_playwright.py
