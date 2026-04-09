@@ -2,14 +2,19 @@ import time
 import requests
 from playwright.sync_api import sync_playwright
 
-BMS_URL = "https://in.bookmyshow.com/movies/hyderabad/project-hail-mary/buytickets/ET00492371/20260410"
+BMS_URL = "https://in.bookmyshow.com/movies/hyderabad/project-hail-mary/buytickets/ET00492371/20260412"
 NTFY_URL = "https://ntfy.sh/mytopic"
+
+# Target date details
+TARGET_DAY = "Mon"
+TARGET_DATE = "13"
+TARGET_MONTH = "Apr"
 
 
 def send_notification():
     requests.post(
         NTFY_URL,
-        data="🎟 Tickets Released for FRI 10 APR! Hurry up fast 😀".encode("utf-8")
+        data=f"🎟 Tickets Released for {TARGET_DAY.upper()} {TARGET_DATE} {TARGET_MONTH.upper()}! Hurry up fast 😀".encode("utf-8")
     )
 
 
@@ -38,27 +43,63 @@ def check_ticket():
             print("Opening page...")
             page.goto(BMS_URL, wait_until="domcontentloaded", timeout=60000)
 
-            # Retry loop (similar to Selenium logic)
+            # Wait for the date strip to appear
+            # page.wait_for_selector("span", timeout=15000)
+
             for i in range(30):
-                result = page.evaluate("""
-                    () => {
-                        const parent = document.querySelector('div[id="20260410"]');
-                        if (!parent) return "NO_TARGET";
+                result = page.evaluate(
+                        """
+                        (params) => {
+                            const { dayText, dateText, monthText } = params;
 
-                        const children = Array.from(parent.children);
-                        const el = children.find(c => c.innerText.trim() === '10');
-                        if (!el) return "NO_TEXT";
+                            // Normalize target values
+                            const targetDay = dayText.toLowerCase();
+                            const targetDate = dateText.trim();
+                            const targetMonth = monthText.toLowerCase();
 
-                        return window.getComputedStyle(el).color;
-                    }
-                """)
+                            // Select all possible date containers
+                            const containers = Array.from(document.querySelectorAll("div"));
 
+                            for (const container of containers) {
+                                // Select both span and div children
+                                const children = container.querySelectorAll(":scope > span, :scope > div");
+                                if (children.length !== 3) continue;
+
+                                const day = children[0].innerText.trim().toLowerCase();
+                                const date = children[1].innerText.trim();
+                                const month = children[2].innerText.trim().toLowerCase();
+
+                                if (
+                                    day === targetDay &&
+                                    date === targetDate &&
+                                    month === targetMonth
+                                ) {
+                                    const style = window.getComputedStyle(container);
+                                    const cursor = style.cursor;
+
+                                    if (cursor === "pointer") return "AVAILABLE";
+                                    if (cursor === "not-allowed") return "NOT_AVAILABLE";
+
+                                    return "UNKNOWN";
+                                }
+                            }
+
+                            return "NO_TARGET";
+                        }
+                        """,
+                        {
+                            "dayText": TARGET_DAY,
+                            "dateText": TARGET_DATE,
+                            "monthText": TARGET_MONTH
+                        }
+                    )
                 print(f"Attempt {i+1}: {result}")
 
-                if result not in ["NO_TARGET", "NO_TEXT"]:
+                if result == "AVAILABLE":
                     browser.close()
-                    if result.strip() in ["rgb(51, 51, 51)", "rgb(255, 255, 255)"]:
-                        return True
+                    return True
+                elif result == "NOT_AVAILABLE":
+                    browser.close()
                     return False
 
                 time.sleep(1)
