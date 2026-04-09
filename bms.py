@@ -1,117 +1,83 @@
 import time
 import requests
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
+from playwright.sync_api import sync_playwright
 
-BMS_URL = "https://in.bookmyshow.com/movies/hyderabad/project-hail-mary/buytickets/ET00492371/20260408"
+BMS_URL = "https://in.bookmyshow.com/movies/hyderabad/project-hail-mary/buytickets/ET00492371/20260410"
 NTFY_URL = "https://ntfy.sh/mytopic"
-
-TARGET_COLOR = "rgb(51, 51, 51)"   # Black → tickets released
 
 
 def send_notification():
     requests.post(
         NTFY_URL,
-        data="🎟 Tickets Released for THU 09 APR! Hurry up fast 😀".encode("utf-8")
+        data="🎟 Tickets Released for FRI 10 APR! Hurry up fast 😀".encode("utf-8")
     )
 
+
 def check_ticket():
-    options = webdriver.ChromeOptions()
-    # options.add_argument("--headless=new")
-    options.add_argument("--window-size=1920,1080")
-    options.add_argument("--disable-gpu")
-
-    service = Service(ChromeDriverManager().install())
-    driver = webdriver.Chrome(service=service, options=options)
-
     try:
-        print("Opening page...")
-        driver.get(BMS_URL)
+        with sync_playwright() as p:
+            browser = p.chromium.launch(
+                headless=True,
+                args=[
+                    "--disable-blink-features=AutomationControlled",
+                    "--no-sandbox",
+                    "--disable-dev-shm-usage"
+                ]
+            )
 
-        # 🔥 Retry loop (Python side, NOT JS)
-        for i in range(30):  # 30 seconds max
-            # result = driver.execute_script("""
-            #     const nodes = document.querySelectorAll('div[id^="2026"]');
+            context = browser.new_context(
+                viewport={"width": 1920, "height": 1080},
+                user_agent=(
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) "
+                    "Chrome/120.0.0.0 Safari/537.36"
+                )
+            )
 
-            #     if (!nodes || nodes.length === 0) {
-            #         return "NO_DATES";
-            #     }
+            page = context.new_page()
+            print("Opening page...")
+            page.goto(BMS_URL, wait_until="domcontentloaded", timeout=60000)
 
-            #     const target = Array.from(nodes).find(e => e.id === "20260408");
+            # Retry loop (similar to Selenium logic)
+            for i in range(30):
+                result = page.evaluate("""
+                    () => {
+                        const parent = document.querySelector('div[id="20260410"]');
+                        if (!parent) return "NO_TARGET";
 
-            #     if (!target) return "NO_TARGET";
+                        const children = Array.from(parent.children);
+                        const el = children.find(c => c.innerText.trim() === '10');
+                        if (!el) return "NO_TEXT";
 
-            #     const children = target.querySelectorAll('div');
+                        return window.getComputedStyle(el).color;
+                    }
+                """)
 
-            #     for (let child of children) {
-            #         if (child.innerText.trim() === '08') {
-            #             return window.getComputedStyle(child).color;
-            #         }
-            #     }
+                print(f"Attempt {i+1}: {result}")
 
-            #     return "NO_TEXT";
-            # """)
+                if result not in ["NO_TARGET", "NO_TEXT"]:
+                    browser.close()
+                    if result.strip() in ["rgb(51, 51, 51)", "rgb(255, 255, 255)"]:
+                        return True
+                    return False
 
-            result = driver.execute_script("""
-                const parent = document.querySelector('div[id="20260409"]');
+                time.sleep(1)
 
-                if (!parent) return "NO_TARGET";
-
-                // get ONLY visible direct children
-                const children = Array.from(parent.children);
-
-                // find exact "09" element
-                const el = children.find(c => c.innerText.trim() === '09');
-
-                if (!el) return "NO_TEXT";
-
-                const color = window.getComputedStyle(el).color;
-
-                return color;
-            """)
-            print(f"Attempt {i+1}: {result}")
-
-            if result not in ["NO_DATES", "NO_TARGET", "NO_TEXT"]:
-                # 🎯 got actual color
-                if result.strip() in ["rgb(51, 51, 51)", "rgb(255, 255, 255)"]:
-                    return True
-                return False
-
-            time.sleep(1)
-
-        print("❌ Date never loaded")
-        return False
+            print("❌ Date never loaded")
+            browser.close()
+            return False
 
     except Exception as e:
         print("❌ Error:", e)
         return False
 
-    finally:
-        driver.quit()
 
-# ⏰ Loop every 10 mins
-# while True:
 print("Checking ticket availability...")
-
-#     try:
-#         if check_ticket():
-#             print("✅ Tickets Released!")
-#             send_notification()
-#             break
-#         else:
-#             print("❌ Still not released")
-
-#     except Exception as e:
-#         print("Error:", e)
-
-#     time.sleep(600)  # 10 minutes
 try:
     if check_ticket():
         print("✅ Tickets Released!")
         send_notification()
     else:
         print("❌ Still not released")
-
 except Exception as e:
     print("Error:", e)
