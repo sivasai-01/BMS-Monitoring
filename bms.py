@@ -12,10 +12,18 @@ TARGET_MONTH = "Apr"
 
 
 def send_notification():
-    requests.post(
-        NTFY_URL,
-        data=f"🎟 Tickets Released for {TARGET_DAY.upper()} {TARGET_DATE} {TARGET_MONTH.upper()}! Hurry up fast 😀".encode("utf-8")
-    )
+    try:
+        message = f"🎟 Tickets Released for {TARGET_DAY.upper()} {TARGET_DATE} {TARGET_MONTH.upper()}! Hurry up fast 😀"
+        response = requests.post(
+            NTFY_URL,
+            data=message.encode("utf-8"),
+            timeout=10
+        )
+        print(f"✅ Notification sent: {response.status_code}")
+        return True
+    except Exception as e:
+        print(f"❌ Notification failed: {e}")
+        return False
 
 
 def check_ticket():
