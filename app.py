@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from bms_playwright import check_ticket, send_notification
+from bms import check_ticket, send_notification
 
 app = FastAPI()
 
