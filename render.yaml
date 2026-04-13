@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: bms-automation-api
+    env: docker
+    buildCommand: docker build -t bms-api .
+    startCommand: docker run -p $PORT:8000 bms-api
