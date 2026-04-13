@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from bms import check_ticket, send_notification
+from bms import check_ticket, send_notification, send_email_notification
 
 app = FastAPI()
 
