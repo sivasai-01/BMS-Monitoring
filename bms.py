@@ -1,9 +1,19 @@
 import time
 import requests
 from playwright.sync_api import sync_playwright
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 BMS_URL = "https://in.bookmyshow.com/movies/hyderabad/project-hail-mary/buytickets/ET00492371/20260414"
 NTFY_URL = "https://ntfy.sh/saibms"
+
+# Email configuration
+SMTP_SERVER = "smtp.gmail.com"
+SMTP_PORT = 587
+SENDER_EMAIL = "chatrasisivasai@gmail.com"  # Change this
+SENDER_PASSWORD = "ytty khen zpjq msxp"  # Use Gmail App Password (not regular password)
+RECIPIENT_EMAIL = "chatrasisivasai@gmail.com"  # Change this
 
 # Target date details
 TARGET_DAY = "Tue"
@@ -23,6 +33,43 @@ def send_notification():
         return True
     except Exception as e:
         print(f"❌ Notification failed: {e}")
+        return False
+
+
+def send_email_notification():
+    """Send email notification when tickets are released"""
+    try:
+        message = f"🎟 Tickets Released for {TARGET_DAY.upper()} {TARGET_DATE} {TARGET_MONTH.upper()}! Hurry up fast 😀"
+        
+        # Create email message
+        msg = MIMEMultipart()
+        msg["From"] = SENDER_EMAIL
+        msg["To"] = RECIPIENT_EMAIL
+        msg["Subject"] = f"🎟 BMS Tickets Released - {TARGET_DAY} {TARGET_DATE} {TARGET_MONTH}"
+        
+        # Email body
+        body = f"""
+        <html>
+            <body>
+                <h2>🎟 Tickets Released!</h2>
+                <p><strong>Date:</strong> {TARGET_DAY}, {TARGET_DATE} {TARGET_MONTH}</p>
+                <p><strong>Message:</strong> {message}</p>
+                <p><a href="{BMS_URL}">Go to BookMyShow</a></p>
+            </body>
+        </html>
+        """
+        msg.attach(MIMEText(body, "html"))
+        
+        # Send email
+        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+            server.starttls()
+            server.login(SENDER_EMAIL, SENDER_PASSWORD)
+            server.send_message(msg)
+        
+        print(f"✅ Email sent to {RECIPIENT_EMAIL}")
+        return True
+    except Exception as e:
+        print(f"❌ Email failed: {e}")
         return False
 
 
