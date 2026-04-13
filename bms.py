@@ -3,7 +3,7 @@ import requests
 from playwright.sync_api import sync_playwright
 
 BMS_URL = "https://in.bookmyshow.com/movies/hyderabad/project-hail-mary/buytickets/ET00492371/20260414"
-NTFY_URL = "https://ntfy.sh/mytopic"
+NTFY_URL = "https://ntfy.sh/saibms"
 
 # Target date details
 TARGET_DAY = "Tue"
