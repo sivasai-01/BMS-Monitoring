@@ -8,8 +8,8 @@ def check_and_notify():
     try:
         if check_ticket():
             print("✅ Tickets Released!")
-            send_notification()
-            return {"status": "available", "notified": True}
+            notified = send_notification()
+            return {"status": "available", "notified": notified}
         else:
             print("❌ Still not released")
             return {"status": "not_available", "notified": False}
